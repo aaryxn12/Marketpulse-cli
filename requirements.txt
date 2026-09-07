@@ -1,0 +1,4 @@
+# Week 1-2: no external dependencies yet — pure standard library on purpose,
+# so the fundamentals (csv, statistics, dataclasses) aren't hidden behind a library.
+# Week 3-4 will add: python-dotenv, requests (or httpx), pytest
+# Week 5-6 will add: fastapi, uvicorn, pydantic
