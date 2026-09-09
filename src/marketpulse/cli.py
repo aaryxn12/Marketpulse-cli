@@ -1,7 +1,8 @@
-import argparse, csv, sys
+import argparse, csv, sys, time
 from .models import Position
 from collections import defaultdict
 from .stats import format_report
+from functools import wraps
 
 class CSVDataInvalidError(Exception):
     def __init__(self, err_msg, ticker):
@@ -34,6 +35,19 @@ def load_positions(path: str) -> dict[str,list[Position]]:
     except FileNotFoundError as e:
         raise DataFileNotFoundError(e, path)
     
+def timed(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        elapsed = end - start
+        print(f"{func.__name__}() took {elapsed:.4f} seconds")
+        return result
+    return wrapper
+
+
+@timed    
 def main():
     parser = argparse.ArgumentParser(description="Welcome to MARKETPULSE CLI tool")
     parser.add_argument("--path", default="data/sample_prices.csv")
