@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from .cli import load_positions, CSVDataInvalidError, DataFileNotFoundError
 from .stats import format_report, mean_return_for_ticker
+import time
 
 app = FastAPI()
 
@@ -12,6 +13,14 @@ class TickerReport(BaseModel):
 
 def get_positions(path: str = "data/sample_prices.csv"):
     return load_positions(path)
+
+@app.middleware("http")
+async def add_timing_header(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    elapsed = time.perf_counter() - start
+    response.headers["X-Process-Time"] = str(elapsed)
+    return response
 
 @app.exception_handler(DataFileNotFoundError)
 def handle_file_not_found(request: Request, exc: DataFileNotFoundError):
