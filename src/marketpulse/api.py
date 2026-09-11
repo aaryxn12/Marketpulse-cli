@@ -1,9 +1,17 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from .cli import load_positions, CSVDataInvalidError, DataFileNotFoundError
 from .stats import format_report, mean_return_for_ticker
 
 app = FastAPI()
+
+class TickerReport(BaseModel):
+    ticker: str
+    mean_return: float
+
+def get_positions(path: str = "data/sample_prices.csv"):
+    return load_positions(path)
 
 @app.exception_handler(DataFileNotFoundError)
 def handle_file_not_found(request: Request, exc: DataFileNotFoundError):
@@ -23,14 +31,12 @@ def read_root():
     return {"message": "Welcome to MarketPulse API"}
 
 @app.get("/report")
-def get_report(path: str="data/sample_prices.csv"):
-    positions = load_positions(path)
+def get_report(positions: dict = Depends(get_positions)):
     result = format_report(positions)
     return {"report": result}
 
-@app.get("/report/{ticker}")
-def get_ticker_report(ticker: str, path: str = "data/sample_prices.csv"):
-    positions = load_positions(path)
+@app.get("/report/{ticker}", response_model=TickerReport)
+def get_ticker_report(ticker: str, positions: dict = Depends(get_positions)):
     ticker_positions = positions.get(ticker)
     if ticker_positions is None:
         raise HTTPException(status_code=404, detail="Ticker Not Found")
